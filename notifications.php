@@ -50,7 +50,7 @@ function sendgrid($atts,$content=null,$shortcode){
 
     //including SENDGRID library
 	
-	require_once AWESOME_PATH.'/vendor/autoload.php';
+	//require_once AWESOME_PATH.'/vendor/autoload.php';
         
     extract(\aw2_library::shortcode_atts( array(
 		'email' => null,
