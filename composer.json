@@ -19,7 +19,7 @@
         "php": ">=7.0",
         "composer/installers": "~1.0",
         "oomphinc/composer-installers-extender": "^2.0",
-        "sendgrid/php-http-client": "^3.13"
+        "sendgrid/sendgrid": "^7.9"
     },
 	 "extra": { 
 		"installer-name": "communication"
