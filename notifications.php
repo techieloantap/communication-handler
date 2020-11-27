@@ -77,81 +77,105 @@ function sendgrid($atts,$content=null,$shortcode){
         return $return_value;
     }
 
+    $sendgrid_email = new \SendGrid\Mail\Mail();
 
-    $sendgrid = new \SendGrid($apiKey);
-    
-	$from = new \SendGrid\Email(null, $email['from']['email_id']);
-	$to = new \SendGrid\Email(null, $email['to']['email_id']);
-    $content = new \SendGrid\Content("text/html", $email['message']);
-	$mail = new \SendGrid\Mail($from, $email['subject'], $to, $content);
-    
+    $sendgrid_email->setFrom($email['from']['email_id'], null);
+    $sendgrid_email->setSubject($email['subject']);
+
+        //$email['to']['email_id']
+    if(isset($email['to']['email_id'])){
+        $to_emails = explode(",",$email['to']['email_id']);
+        foreach($to_emails as $val){
+            $sendgrid_email->addTo($val, null);
+        }
+    }
+
+
+    // Content 
+    $sendgrid_email->addContent(
+        "text/html", $email['message']
+    );
+
     // Works on only when the attachments are present
     if(isset($email['attachments']['file'])){
         
         //storing file array in variable
         $file = $email['attachments']['file'];
-
         //looping through the file content
         for($i=0; $i<sizeof($file); $i++){
             $name = $file[$i]['name'];
             $path = $file[$i]['path'];
             if(!empty($path)){
-                // new instance of attachment
-                $attachment = new \SendGrid\Attachment();
                 $file_encoded = base64_encode(file_get_contents($path));
-                $attachment->setContent($file_encoded);
-                $attachment->setDisposition("attachment");
-                $attachment->setFilename($name);
-                $mail->addAttachment($attachment);
+                $sendgrid_email->addAttachment($file_encoded, null, $name, "attachment", null);
             }
         }
+        
     }
-	
-	//$email['cc']['email_id']
-	if(isset($email['cc']['email_id'])){
-		$cc_emails = explode(",",$email['cc']['email_id']);
-		foreach($cc_emails as $val){
-			$cc_to = new \SendGrid\Email(null, $val);
-			$mail->personalization[0]->addCc($cc_to);
-		}
-	}
-	
-	//$email['reply_to']['email_id']
-	if(isset($email['reply_to']['email_id'])){		
-		$reply_to_emails = explode(",",$email['reply_to']['email_id']);
-		foreach($reply_to_emails as $val){
-			$reply_to = new \SendGrid\Email(null, $val);
-			$mail->setReplyTo($reply_to);
-		}
-	}
 
-    $response = $sendgrid->client->mail()->send()->post($mail);
-	
-	//get headers from the response->headers();
-    $header = $response->headers();
+    //$email['cc']['email_id']
+    if(isset($email['cc']['email_id'])){
+        $cc_emails = explode(",",$email['cc']['email_id']);
+        foreach($cc_emails as $val){
+             $sendgrid_email->addCc($val, null);
+        }
+    }
 
-    //getting the message id from the header response
-    $messageId = \getBetween($header,"X-Message-Id:","Access-Control-Allow-Origin");
+    //$email['bcc']['email_id']
+    if(isset($email['bcc']['email_id'])){
+        $bcc_emails = explode(",",$email['bcc']['email_id']);
+        foreach($bcc_emails as $val){
+             $sendgrid_email->addBcc($val, null);
+        }
+    }
 
-    //setting up tracking array
-    $tracking['tracking_id'] = trim($messageId) ;
-    $tracking['tracking_status'] = 'sent_to_provider';
-    $tracking['tracking_stage'] = 'sent_to_provider';
-	if(!empty($tracking_set))$tracking['tracking_set']=$tracking_set;
+    //$email['reply_to']['email_id']
+    if(isset($email['reply_to']['email_id'])){      
+        $reply_to_emails = explode(",",$email['reply_to']['email_id']);
+        foreach($reply_to_emails as $val){
+             $sendgrid_email->setReplyTo($val, null);
+        }
+    }
+
+    $sendgrid = new \SendGrid($apiKey);
+
+    try {
+        $response = $sendgrid->send($sendgrid_email);
     
-    // Log data in db
-	require_once __DIR__ .'/includes/notification_helper.php';
-    \notification_log('mail', 'sendgrid', $email, $log, $notification_object_type, $notification_object_id, $tracking);
+        //get headers from the response->headers();
+        $header = $response->headers();    
 
-    $return_value = $response->statusCode();
+        foreach ($header as $val) {
+            $val_array = explode(':', $val);
 
-    if($return_value == 202){
-        $return_value = "success";
+            if($val_array[0] == 'X-Message-Id'){
+                //getting the message id from the header response
+                $messageId = $val_array[1]; 
+
+                //setting up tracking array
+                $tracking['tracking_id'] = trim($messageId) ;
+                $tracking['tracking_status'] = 'sent_to_provider';
+                $tracking['tracking_stage'] = 'sent_to_provider';
+                if(!empty($tracking_set))$tracking['tracking_set']=$tracking_set;
+                
+                break;
+            }
+        }
+
+    	$return_value = $response->statusCode();
+
+        if($return_value == 202){
+            $return_value = "success";
+        }
+
+        
+    } catch (Exception $e) {
+        echo 'Caught exception: ',  $e->getMessage(), "\n";
+        $return_value = "error";
     }
-
-	$return_value=\aw2_library::post_actions('all',$return_value,$atts);
-	
-	return $return_value;
+    
+    $return_value=\aw2_library::post_actions('all',$return_value,$atts);
+    return $return_value;
 }
 
 \aw2_library::add_service('notify.kookoo','Send Kookoo SMS',['namespace'=>__NAMESPACE__]);
