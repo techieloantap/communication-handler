@@ -159,7 +159,7 @@ function sendgrid($atts,$content=null,$shortcode){
                 if(!empty($tracking_set))$tracking['tracking_set']=$tracking_set;
                 
 	    	// Log data in db
-		require_once __DIR__ .'/includes/notification_helper.php';
+			require_once __DIR__ .'/includes/notification_helper.php';
     		\notification_log('email', 'sendgrid', $email, $log, $notification_object_type, $notification_object_id);
 		    
                 break;

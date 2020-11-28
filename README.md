@@ -8,6 +8,9 @@ Adds support to Awesome Enterprise for sending emails, SMS and push notification
 ### Changelog  
 
 
+##### 1.0.2
+* Improved: Switched to Sendgrid V3 API
+
 ##### 1.0.1
 * Fixed: Class 'SendGrid' not found 
   
