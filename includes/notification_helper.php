@@ -33,8 +33,9 @@ function notification_log($type, $provider, $data, $log, $notification_object_ty
     $subject = str_replace("'","\"",$data['subject']);
     $message = str_replace("'","\"",$data['message']);
 
-    global $wpdb;
-    $wpdb->query("INSERT INTO `notification_log` (`notification_type`, `notification_provider`, `notification_to`, `notification_from`, `cc`, `bcc`, `reply_to`, `subject`, `message`, `object_type`, `object_id`, `tracking_id`, `tracking_status`, `tracking_stage`, `tracking_set`) VALUES ('".$type."', '".$provider."', '".$to."', '".$data['from']['email_id']."', '".$data['cc']['email_id']."', '".$data['bcc']['email_id']."', '".$data['reply_to']['email_id']."', '".$subject."', '".$message."', '".$notification_object_type."', '".$notification_object_id."', '".$tracking['tracking_id']."', '".$tracking['tracking_status']."', '".$tracking['tracking_stage']."', '".$tracking['tracking_set']."')");			
+
+    $sql = "INSERT INTO `notification_log` (`notification_type`, `notification_provider`, `notification_to`, `notification_from`, `cc`, `bcc`, `reply_to`, `subject`, `message`, `object_type`, `object_id`, `tracking_id`, `tracking_status`, `tracking_stage`, `tracking_set`) VALUES ('".$type."', '".$provider."', '".\aw2_library::esc_sql($to)."', '".$data['from']['email_id']."', '".\aw2_library::esc_sql($data['cc']['email_id'])."', '".\aw2_library::esc_sql($data['bcc']['email_id'])."', '".\aw2_library::esc_sql($data['reply_to']['email_id'])."', '".$subject."', '".$message."', '".$notification_object_type."', '".$notification_object_id."', '".$tracking['tracking_id']."', '".$tracking['tracking_status']."', '".$tracking['tracking_stage']."', '".$tracking['tracking_set']."')";
+    $r=\aw2\mysqli\cud([],$sql,array());
 }
 
 function getBetween($content,$start,$end){
